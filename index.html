@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Socratic Mind</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        MathJax = {
+          tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+          svg: { fontCache: 'global' }
+        };
+    </script>
+    <script type="text/javascript" id="MathJax-script" async
+        src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js">
+    </script>
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
+            overflow: hidden;
+            color: white;
+        }
+        #background-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        #tutor-bot-container {
+            position: fixed;
+            top: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+        }
+        #tutor-bot {
+            width: 150px;
+            height: 180px;
+            position: relative;
+            animation: bot-float 6s ease-in-out infinite;
+        }
+        .bot-antenna {
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            width: 4px;
+            height: 20px;
+            background: #9ca3af;
+            border-radius: 2px;
+            transform-origin: bottom;
+        }
+        .bot-antenna::after {
+            content: '';
+            position: absolute;
+            top: -6px;
+            left: -3px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #34d399;
+            box-shadow: 0 0 10px #34d399;
+            animation: antenna-pulse 2s infinite;
+        }
+        .bot-head {
+            width: 80px;
+            height: 70px;
+            background: linear-gradient(145deg, #e0e7ff, #c7d2fe);
+            border-radius: 50% 50% 40% 40%;
+            margin: 10px auto 0;
+            position: relative;
+            border: 2px solid #fff;
+        }
+        .bot-face-screen {
+            width: 60px;
+            height: 40px;
+            background: #000;
+            position: absolute;
+            top: 15px;
+            left: 10px;
+            border-radius: 5px;
+            overflow: hidden;
+            box-shadow: inset 0 0 10px #4f46e5;
+            transition: box-shadow 0.3s;
+        }
+        .bot-eye {
+            position: absolute;
+            top: 12px;
+            width: 8px;
+            height: 12px;
+            background: #5eead4;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #5eead4;
+            animation: blink 4s infinite;
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+        .bot-eye.left { left: 15px; }
+        .bot-eye.right { right: 15px; }
+        .bot-smile {
+             position: absolute;
+             bottom: 8px;
+             left: 50%;
+             transform: translateX(-50%);
+             width: 15px;
+             height: 5px;
+             border: 2px solid #5eead4;
+             border-top-color: transparent;
+             border-radius: 0 0 10px 10px;
+        }
+        .bot-body {
+            width: 100px;
+            height: 90px;
+            background: linear-gradient(145deg, #d1d5db, #9ca3af);
+            border-radius: 30px;
+            margin: -10px auto 0;
+            position: relative;
+            border: 2px solid #fff;
+        }
+         .bot-logo {
+            width: 30px;
+            height: 30px;
+            background: #facc15;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            color: #1f2937;
+        }
+
+        @keyframes bot-float { 0%, 100% { transform: translateY(0px) rotate(0deg); } 50% { transform: translateY(-20px) rotate(5deg); } }
+        @keyframes blink { 0%, 90%, 100% { transform: scaleY(1); } 95% { transform: scaleY(0.1); } }
+        @keyframes antenna-pulse { 50% { background: #a7f3d0; box-shadow: 0 0 15px #a7f3d0; } }
+        
+        .bot-puzzled .bot-face-screen { box-shadow: 0 0 20px #ef4444; }
+        .bot-puzzled .bot-eye { background-color: #ef4444; box-shadow: 0 0 15px #ef4444; }
+
+        .bot-celebrate { animation: bot-roll 0.8s ease-in-out, bot-float 6s ease-in-out infinite; }
+        .bot-celebrate .bot-face-screen { box-shadow: 0 0 20px #22c55e; }
+        .bot-celebrate .bot-eye.right { animation: bot-delayed-wink 1.2s ease-in-out; }
+        .bot-celebrate .bot-eye { background-color: #22c55e; box-shadow: 0 0 15px #22c55e; }
+
+        @keyframes bot-roll { 0% { transform: rotate(0deg) scale(1); } 50% { transform: rotate(180deg) scale(1.2); } 100% { transform: rotate(360deg) scale(1); } }
+        @keyframes bot-delayed-wink { 0%, 65% { transform: scaleY(1); } 75%, 95% { transform: scaleY(0.1); } 100% { transform: scaleY(1); } }
+
+        #chat-container {
+            position: fixed;
+            bottom: 90px;
+            left: 0;
+            right: 0;
+            height: 50vh;
+            padding: 1rem;
+            overflow-y: auto;
+            -webkit-mask-image: linear-gradient(to top, black 80%, transparent 100%);
+            mask-image: linear-gradient(to top, black 80%, transparent 100%);
+        }
+        .message-wrapper { transition: transform 0.3s, opacity 0.3s; transform: scale(0.9); opacity: 0; }
+        .message-wrapper.show { transform: scale(1); opacity: 1; }
+        .bot-bubble { background: linear-gradient(135deg, #14b8a6, #8b5cf6); color: white; }
+        .user-bubble { background-color: rgba(255, 255, 255, 0.1); color: #e5e7eb; backdrop-filter: blur(5px); border: 1px solid rgba(255, 255, 255, 0.2); }
+        
+        #language-selector {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 20;
+        }
+        #language-selector button {
+            transition: all 0.2s ease-in-out;
+        }
+        #language-selector button.active {
+            background-color: #14b8a6;
+            transform: scale(1.1);
+            box-shadow: 0 0 15px #14b8a6;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen">
+    <canvas id="background-canvas"></canvas>
+    
+    <div id="language-selector" class="flex space-x-2 bg-gray-900/50 p-2 rounded-full">
+        <button data-lang="en-US" class="px-3 py-1 rounded-full text-sm font-semibold bg-gray-700 text-white active">EN</button>
+        <button data-lang="ta-IN" class="px-3 py-1 rounded-full text-sm font-semibold bg-gray-700 text-white">தமிழ்</button>
+        <button data-lang="hi-IN" class="px-3 py-1 rounded-full text-sm font-semibold bg-gray-700 text-white">हिन्दी</button>
+    </div>
+
+    <!-- Bot Character -->
+    <div id="tutor-bot-container">
+        <div id="tutor-bot">
+            <div class="bot-antenna" style="transform: translateX(-15px) rotate(-15deg);"></div>
+            <div class="bot-antenna" style="transform: translateX(15px) rotate(15deg);"></div>
+            <div class="bot-head">
+                <div class="bot-face-screen">
+                    <div class="bot-eye left"></div>
+                    <div class="bot-eye right"></div>
+                    <div class="bot-smile"></div>
+                </div>
+            </div>
+            <div class="bot-body">
+                <div class="bot-logo">💡</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat UI -->
+    <div id="chat-ui-container" class="fixed bottom-0 left-0 right-0 w-full">
+        <div id="chat-container" class="space-y-4"></div>
+        <footer class="p-4 max-w-2xl mx-auto">
+             <div id="image-preview-container" class="hidden relative w-20 h-20 mb-2 ml-2">
+                 <img id="image-preview" class="w-full h-full object-cover rounded-md border-2 border-teal-400 shadow-lg">
+                 <button id="remove-image" type="button" class="absolute top-0 right-0 -mt-2 -mr-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-md font-bold">&times;</button>
+             </div>
+            <form id="math-form" class="flex items-center gap-2">
+                <label for="image-upload" class="p-3 rounded-full bg-white/10 border border-gray-600 cursor-pointer hover:bg-white/20 transition-colors duration-200 shadow-sm backdrop-blur-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+                    <input id="image-upload" type="file" class="hidden" accept="image/png, image/jpeg, image/webp" />
+                </label>
+                <textarea id="problem" name="problem" rows="1" class="flex-grow block w-full rounded-full bg-gray-800/50 border border-gray-600 shadow-xl text-white focus:border-teal-500 focus:ring-teal-500 sm:text-base p-3 px-5 resize-none backdrop-blur-sm" placeholder="Ask a math question..."></textarea>
+                <button id="teach-me-button" type="button" class="bg-blue-500 text-white p-3 rounded-full font-semibold hover:bg-blue-600 focus:outline-none transition-transform duration-200 hover:scale-110 shadow-lg">🎓</button>
+                <button id="hint-button" type="button" class="bg-yellow-500 text-white p-3 rounded-full font-semibold hover:bg-yellow-600 focus:outline-none transition-transform duration-200 hover:scale-110 shadow-lg">💡</button>
+                <button type="submit" id="submit-button" class="bg-teal-500 text-white p-3 rounded-full font-semibold hover:bg-teal-600 focus:outline-none transition-transform duration-200 hover:scale-110 shadow-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+                </button>
+            </form>
+        </footer>
+    </div>
+
+    <script>
+        // --- Canvas Background Animation (omitted for brevity, same as before) ---
+        const canvas = document.getElementById('background-canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        let spaceObjects = [];
+        const mathChars = ['½', '¾', '⅓', '1', '3', '4', '5', '+', '−', '×', '÷', '√', 'π', 'α', 'β'];
+        const ballColors = [['#ef4444', '#3b82f6'],['#22c55e', '#f97316', '#a855f7'],['#facc15', '#ef4444', '#a855f7', '#65a30d']];
+        const mouse = { x: undefined, y: undefined, radius: 150 };
+        window.addEventListener('mousemove', (event) => { mouse.x = event.clientX; mouse.y = event.clientY; });
+        class SpaceObject { constructor(){this.x=Math.random()*canvas.width;this.y=Math.random()*canvas.height;this.baseX=this.x;this.baseY=this.y;this.density=(Math.random()*30)+1;this.speedX=(Math.random()-.5)*.5;this.speedY=(Math.random()-.5)*.5;const t=Math.random();if(t>.95){this.type="ball";this.size=Math.random()*30+20;this.colors=ballColors[Math.floor(Math.random()*ballColors.length)]}else if(t>.85){this.type="math";this.char=mathChars[Math.floor(Math.random()*mathChars.length)];this.size=Math.random()*20+15}else{this.type="star";this.size=Math.random()*2+1}}update(){let t=mouse.x-this.x,e=mouse.y-this.y,s=Math.sqrt(t*t+e*e);if(s<mouse.radius){let i=t/s,a=e/s,h=mouse.radius,o=(h-s)/h,r=i*o*this.density,l=a*o*this.density;this.x-=r;this.y-=l}else{if(this.x!==this.baseX){let n=this.x-this.baseX;this.x-=n/10}if(this.y!==this.baseY){let c=this.y-this.baseY;this.y-=c/10}}this.x+=this.speedX;this.y+=this.speedY;if(this.x<0||this.x>canvas.width)this.speedX*=-1;if(this.y<0||this.y>canvas.height)this.speedY*=-1;this.baseX+=this.speedX;this.baseY+=this.speedY;if(this.baseX<0||this.baseX>canvas.width)this.speedX*=-1;if(this.baseY<0||this.baseY>canvas.height)this.speedY*=-1}draw(){ctx.fillStyle="rgba(255, 255, 255, 0.8)";ctx.strokeStyle="rgba(255, 255, 255, 0.2)";ctx.lineWidth=2;if(this.type==="ball"){const t=this.colors.length,e=Math.PI*2/t;for(let s=0;s<t;s++){ctx.beginPath();ctx.moveTo(this.x,this.y);ctx.arc(this.x,this.y,this.size,s*e,(s+1)*e);ctx.closePath();ctx.fillStyle=this.colors[s];ctx.fill();ctx.stroke()}}else if(this.type==="math"){ctx.font=`${this.size}px 'Nunito'`;ctx.fillText(this.char,this.x,this.y)}else{ctx.beginPath();ctx.arc(this.x,this.y,this.size,0,Math.PI*2);ctx.fill()}}}
+        function initSpace() { for (let i = 0; i < 150; i++) { spaceObjects.push(new SpaceObject()); } }
+        function animateCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); const t=ctx.createRadialGradient(canvas.width/2,canvas.height/2,0,canvas.width/2,canvas.height/2,Math.max(canvas.width,canvas.height)/1.5);t.addColorStop(0,"rgba(129, 140, 248, 0.2)");t.addColorStop(.5,"rgba(59, 130, 246, 0.1)");t.addColorStop(1,"rgba(12, 10, 36, 0)");ctx.fillStyle=t;ctx.fillRect(0,0,canvas.width,canvas.height); spaceObjects.forEach(s => { s.update(); s.draw(); }); requestAnimationFrame(animateCanvas); }
+        initSpace(); animateCanvas();
+        window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; spaceObjects = []; initSpace(); });
+
+        // --- Core Chat Logic ---
+        const tutorBot = document.getElementById('tutor-bot');
+        const chatContainer = document.getElementById('chat-container');
+        const form = document.getElementById('math-form');
+        const problemInput = document.getElementById('problem');
+        const submitButton = document.getElementById('submit-button');
+        const hintButton = document.getElementById('hint-button');
+        const teachMeButton = document.getElementById('teach-me-button');
+        const imageUpload = document.getElementById('image-upload');
+        const imagePreviewContainer = document.getElementById('image-preview-container');
+        const imagePreview = document.getElementById('image-preview');
+        const removeImageBtn = document.getElementById('remove-image');
+        const langButtons = document.querySelectorAll('#language-selector button');
+
+        let chatHistory = [];
+        let imageBase64 = null;
+        let currentLang = 'en-US';
+
+        const translations = {
+            'en-US': { welcome: "Hello! I'm Socratic Mind. Let's solve some problems together! �", hint: "Hint, please! 💡", teach: "Teach me this, please! 🎓" },
+            'ta-IN': { welcome: "வணக்கம்! நான் சாக்ரடிக் மைன்ட். வாருங்கள் சேர்ந்து சில கணக்குகளைத் தீர்ப்போம்! 🚀", hint: "குறிப்பு, தயவுசெய்து! 💡", teach: "இதை எனக்குக் கற்றுக்கொடுங்கள்! 🎓" },
+            'hi-IN': { welcome: "नमस्ते! मैं सुकराती मन हूँ। चलिए मिलकर कुछ समस्याओं का समाधान करें! 🚀", hint: "संकेत, कृपया! 💡", teach: "कृपया मुझे यह सिखाएं! 🎓" }
+        };
+
+        function setBotState(state) {
+            tutorBot.className = '';
+            if (state) tutorBot.classList.add(`bot-${state}`);
+        }
+
+        function appendMessage(sender, message, imageUrl = null) {
+            const messageWrapper = document.createElement('div');
+            let bubbleClass = sender === 'user' ? 'user-bubble' : 'bot-bubble';
+            let justification = sender === 'user' ? 'justify-end' : 'justify-start';
+            messageWrapper.className = `flex ${justification} message-wrapper`;
+            messageWrapper.innerHTML = `<div class="${bubbleClass} p-3 rounded-2xl max-w-md shadow-lg">
+                ${imageUrl ? `<img src="${imageUrl}" class="rounded-md mb-2 max-w-xs border-2 border-white/50">` : ''}
+                <p>${message}</p>
+            </div>`;
+            chatContainer.appendChild(messageWrapper);
+            setTimeout(() => messageWrapper.classList.add('show'), 10);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function speak(text, lang) {
+            speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text.replace(/\$/g, ''));
+            utterance.lang = lang;
+            utterance.onstart = () => setBotState('celebrate');
+            utterance.onend = () => setBotState('default');
+            speechSynthesis.speak(utterance);
+        }
+
+        imageUpload.addEventListener('change', (event) => { /* ... same as before ... */ });
+        removeImageBtn.addEventListener('click', () => { /* ... same as before ... */ });
+        
+        async function callGeminiApi(history, systemPrompt, expectJson = false) {
+            const apiKey = "AIzaSyBoXwQ4i91HBFukPknxb6WM-13pJJ0s98U";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+            
+            const payload = {
+                contents: history,
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+            };
+
+            if (expectJson) {
+                payload.generationConfig = {
+                    responseMimeType: "application/json",
+                    responseSchema: { type: "ARRAY", items: { type: "STRING" } }
+                };
+            }
+
+            const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            if (!response.ok) { throw new Error(`HTTP error! status: ${response.status}`); }
+            const result = await response.json();
+            if (result.candidates && result.candidates.length > 0 && result.candidates[0].content.parts) {
+                const text = result.candidates[0].content.parts[0].text;
+                return expectJson ? JSON.parse(text) : text;
+            }
+            return expectJson ? ["I'm not sure how to explain that step-by-step."] : "I'm not sure how to respond.";
+        }
+        
+        async function sendStepByStepMessages(steps, lang) {
+            for (const step of steps) {
+                appendMessage('ai', step);
+                await MathJax.typesetPromise();
+                speak(step, lang);
+                await new Promise(resolve => setTimeout(resolve, step.length * 50 + 1000)); // Delay based on text length
+            }
+        }
+
+        async function handleSubmission(userInput, mode = 'socratic') {
+            if (!userInput && !imageBase64) return;
+            speechSynthesis.cancel();
+
+            let displayInput = userInput;
+            if (mode === 'hint') displayInput = translations[currentLang].hint;
+            if (mode === 'teach') displayInput = translations[currentLang].teach;
+
+            appendMessage('user', displayInput, imageBase64);
+            
+            const userParts = [];
+            if (userInput) userParts.push({ text: userInput });
+            if (imageBase64) userParts.push({ inlineData: { mimeType: imageBase64.split(';')[0].split(':')[1], data: imageBase64.split(',')[1] } });
+            
+            if (mode === 'socratic' || mode === 'hint') {
+                 chatHistory.push({ role: 'user', parts: userParts });
+            }
+
+            problemInput.value = '';
+            imageBase64 = null;
+            imageUpload.value = '';
+            imagePreviewContainer.classList.add('hidden');
+            problemInput.style.height = 'auto';
+            [submitButton, hintButton, teachMeButton].forEach(btn => btn.disabled = true);
+
+            try {
+                if (mode === 'teach') {
+                    const teachSystemPrompt = `You are 'Socratic Mind,' an expert AI math tutor. A student has asked you to 'teach' them. Provide a direct, simple, step-by-step explanation. Respond in the language of the user's query (${currentLang}). Break down the solution into an array of strings, with each string being one step. Use LaTeX for math. The response MUST be a valid JSON array.`;
+                    const teachHistory = [{ role: 'user', parts: userParts }];
+                    const solutionSteps = await callGeminiApi(teachHistory, teachSystemPrompt, true);
+                    await sendStepByStepMessages(solutionSteps, currentLang);
+                } else {
+                    const socraticSystemPrompt = `You are 'Socratic Mind,' an expert AI math tutor. Your SOLE method of teaching is the Socratic method. NEVER give a direct answer. Guide the student to find the answer themselves. Ask only ONE question at a time. Respond in the language of the user's query (${currentLang}). Use LaTeX for ALL math notation.`;
+                    const solutionText = await callGeminiApi(chatHistory, socraticSystemPrompt);
+                    chatHistory.push({ role: 'model', parts: [{ text: solutionText }] });
+                    if (solutionText.includes("🎉")) { setBotState('celebrate'); }
+                    else if (solutionText.includes("🤔")) { setBotState('puzzled'); }
+                    else { setBotState('default'); }
+                    appendMessage('ai', solutionText);
+                    await MathJax.typesetPromise();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                appendMessage('ai', 'I seem to be having a little trouble. Please try again.');
+            } finally {
+                [submitButton, hintButton, teachMeButton].forEach(btn => btn.disabled = false);
+                setTimeout(() => setBotState('default'), 2000);
+            }
+        }
+
+        form.addEventListener('submit', (e) => { e.preventDefault(); handleSubmission(problemInput.value.trim(), 'socratic'); });
+        hintButton.addEventListener('click', () => handleSubmission("hint", 'hint'));
+        teachMeButton.addEventListener('click', () => handleSubmission(problemInput.value.trim(), 'teach'));
+        problemInput.addEventListener('input', () => { problemInput.style.height = 'auto'; problemInput.style.height = (problemInput.scrollHeight) + 'px'; });
+        
+        langButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                langButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                currentLang = button.dataset.lang;
+                chatHistory = []; // Reset history on language change
+                chatContainer.innerHTML = ''; // Clear chat
+                appendMessage('ai', translations[currentLang].welcome);
+            });
+        });
+        
+        appendMessage('ai', translations[currentLang].welcome);
+    </script>
+</body>
+</html>
+�
