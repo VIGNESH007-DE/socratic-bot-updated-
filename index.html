@@ -271,7 +271,7 @@
         let currentLang = 'en-US';
 
         const translations = {
-            'en-US': { welcome: "Hello! I'm Socratic Mind. Let's solve some problems together! �", hint: "Hint, please! 💡", teach: "Teach me this, please! 🎓" },
+            'en-US': { welcome: "Hello! I'm Socratic Mind. Let's solve some problems together! 🚀", hint: "Hint, please! 💡", teach: "Teach me this, please! 🎓" },
             'ta-IN': { welcome: "வணக்கம்! நான் சாக்ரடிக் மைன்ட். வாருங்கள் சேர்ந்து சில கணக்குகளைத் தீர்ப்போம்! 🚀", hint: "குறிப்பு, தயவுசெய்து! 💡", teach: "இதை எனக்குக் கற்றுக்கொடுங்கள்! 🎓" },
             'hi-IN': { welcome: "नमस्ते! मैं सुकराती मन हूँ। चलिए मिलकर कुछ समस्याओं का समाधान करें! 🚀", hint: "संकेत, कृपया! 💡", teach: "कृपया मुझे यह सिखाएं! 🎓" }
         };
@@ -299,13 +299,29 @@
             speechSynthesis.cancel();
             const utterance = new SpeechSynthesisUtterance(text.replace(/\$/g, ''));
             utterance.lang = lang;
+            utterance.rate = 0.9; // Slow down the speech rate
             utterance.onstart = () => setBotState('celebrate');
             utterance.onend = () => setBotState('default');
             speechSynthesis.speak(utterance);
         }
 
-        imageUpload.addEventListener('change', (event) => { /* ... same as before ... */ });
-        removeImageBtn.addEventListener('click', () => { /* ... same as before ... */ });
+        imageUpload.addEventListener('change', (event) => {
+             const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    imageBase64 = e.target.result;
+                    imagePreview.src = imageBase64;
+                    imagePreviewContainer.classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        removeImageBtn.addEventListener('click', () => {
+            imageBase64 = null;
+            imageUpload.value = '';
+            imagePreviewContainer.classList.add('hidden');
+        });
         
         async function callGeminiApi(history, systemPrompt, expectJson = false) {
             const apiKey = "AIzaSyBoXwQ4i91HBFukPknxb6WM-13pJJ0s98U";
@@ -335,10 +351,11 @@
         
         async function sendStepByStepMessages(steps, lang) {
             for (const step of steps) {
+                if (speechSynthesis.speaking) await new Promise(resolve => setTimeout(resolve, 200)); // Prevent overlap
                 appendMessage('ai', step);
                 await MathJax.typesetPromise();
                 speak(step, lang);
-                await new Promise(resolve => setTimeout(resolve, step.length * 50 + 1000)); // Delay based on text length
+                await new Promise(resolve => setTimeout(resolve, step.length * 60 + 1000)); // Adjusted delay
             }
         }
 
@@ -402,8 +419,8 @@
                 langButtons.forEach(btn => btn.classList.remove('active'));
                 button.classList.add('active');
                 currentLang = button.dataset.lang;
-                chatHistory = []; // Reset history on language change
-                chatContainer.innerHTML = ''; // Clear chat
+                chatHistory = [];
+                chatContainer.innerHTML = '';
                 appendMessage('ai', translations[currentLang].welcome);
             });
         });
@@ -412,4 +429,3 @@
     </script>
 </body>
 </html>
-�
